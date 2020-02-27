@@ -14,11 +14,26 @@ from model import *
 #         res.append(Cell(row=cell.row, col=cell.col - 1))
 
 class AI:
-
     def __init__(self):
         self.rows = 0
         self.cols = 0
         self.path_for_my_units = None
+
+    def find_path(self, world):
+        path_e1 = world.get_shortest_path_to_cell(from_player=world.get_me(), cell=world.get_first_enemy().king.center)
+        path_e2 = world.get_shortest_path_to_cell(from_player=world.get_me(), cell=world.get_second_enemy().king.center)
+        e1 = len(path_e1.cells)
+        e2 = len(path_e2.cells)
+
+        for unit in world.get_me().units + world.get_friend().units:
+            if unit.path.id == path_e1.id:
+                e1 += 1
+            elif unit.path.id == path_e2.id:
+                e2 += 1
+        if e1 < e2:
+            return path_e1
+        else:
+            return path_e2
 
     # this function is called in the beginning for deck picking and pre process
     def pick(self, world):
@@ -49,7 +64,7 @@ class AI:
         my_units = world.get_me().units
 
         for base_unit in myself.hand:
-            world.put_unit(base_unit=base_unit, path=self.path_for_my_units)
+            world.put_unit(base_unit=base_unit, path=self.find_path(world))
 
 
         # this code tries to cast the received spell
@@ -74,8 +89,9 @@ class AI:
                     world.cast_area_spell(center=best_unit.cell, spell=received_spell)
             elif received_spell.type == SpellType.TELE:
                 last_unit = myself.units[-1]
-                world.cast_unit_spell(last_unit, self.path_for_my_units, self.path_for_my_units.cells[len(self.path_for_my_units.cells) // 2 - 2],
-                                      received_spell)
+                mid_cell = self.path_for_my_units.cells[len(self.path_for_my_units.cells) // 2 - 2]
+                print("TELEPORT SPELL USED", received_spell)
+                world.cast_unit_spell(last_unit, path=self.path_for_my_units, cell=mid_cell, spell=received_spell)
             elif received_spell.type == SpellType.DUPLICATE:
                 #TODO: change the code if the ratio is based on BaseUnit properties
                 best_score = 0
