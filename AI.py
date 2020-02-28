@@ -1,6 +1,7 @@
 import random
 
 from model import *
+import utils
 
 # def neighbor_cells(cell):
 #     res = []
@@ -44,6 +45,8 @@ class AI:
         self.rows = map.row_num
         self.cols = map.col_num
 
+        print("map log :", map.cells[0][0])
+
         # choosing all flying units
         all_base_units = world.get_all_base_units()
         my_hand = [base_unit for base_unit in all_base_units if base_unit.is_flying]
@@ -63,37 +66,29 @@ class AI:
         friend_units = world.get_friend().units
         my_units = world.get_me().units
 
+        low_cost = myself.hand[0]
         for base_unit in myself.hand:
-            world.put_unit(base_unit=base_unit, path=self.find_path(world))
-
+            if base_unit.ap < low_cost.ap:
+                low_cost = base_unit
+        world.put_unit(base_unit=low_cost, path=self.find_path(world))
 
         # this code tries to cast the received spell
         received_spell = world.get_received_spell()
         if received_spell is not None:
+            print(received_spell)
             if received_spell.type == SpellType.HP:
                 if received_spell.target == SpellTarget.ENEMY:
-                    enemy_units.sort(key=lambda x: x.hp)
-                    world.cast_area_spell(center=enemy_units[0].cell, spell=received_spell)
+                    world.cast_area_spell(center=utils.best_cell_for_range_8_spell(world, enemy_units, heal=False),
+                                          spell=received_spell)
                 else:
-                    best_score = -1000
-                    best_unit = friend_units[0]
-                    for unit in friend_units:
-                        score = unit.hp * -1
-                        if (unit.target_if_king and unit.hp < unit.base_unit.max_hp):
-                            score += 100
+                    world.cast_area_spell(center=utils.best_cell_for_range_8_spell(world, friend_units, heal=True),
+                                          spell=received_spell)
 
-                        if score > best_score:
-                            best_score = score
-                            best_unit = unit
-
-                    world.cast_area_spell(center=best_unit.cell, spell=received_spell)
             elif received_spell.type == SpellType.TELE:
                 last_unit = myself.units[-1]
                 mid_cell = self.path_for_my_units.cells[len(self.path_for_my_units.cells) // 2 - 2]
-                print("TELEPORT SPELL USED", received_spell)
                 world.cast_unit_spell(last_unit, path=self.path_for_my_units, cell=mid_cell, spell=received_spell)
             elif received_spell.type == SpellType.DUPLICATE:
-                #TODO: change the code if the ratio is based on BaseUnit properties
                 best_score = 0
                 best_unit = friend_units[0]
                 for unit in friend_units:
@@ -104,15 +99,8 @@ class AI:
                     world.cast_area_spell(best_unit.cell, spell=received_spell)
 
             elif received_spell.type == SpellType.HASTE:
-                best_score = 0
-                best_unit = friend_units[0]
-                for unit in friend_units:
-                    unit_score = unit.hp + unit.attack + unit.range + 20 * int(unit.target != None) + 1000 * int(
-                        unit.target_if_king != None)
-                    if (unit_score > best_score):
-                        best_score = unit_score
-                        best_unit = unit
-                    world.cast_area_spell(best_unit.cell, spell=received_spell)
+                world.cast_area_spell(center=utils.best_cell_for_range_8_spell(world, enemy_units, heal=False),
+                                      spell=received_spell)
 
             #Damage Upgrade Code:
             best_score = 0

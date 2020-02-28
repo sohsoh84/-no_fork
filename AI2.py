@@ -1,5 +1,4 @@
 import random
-import AI_MinimaxUtils
 
 from model import *
 
