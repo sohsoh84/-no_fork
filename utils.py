@@ -1,5 +1,15 @@
 from model import *
 
+class uws:
+    base_unit = None
+    score = -1
+    def __init__(self, base_unit):
+        self.base_unit = base_unit
+    def scr(self):
+        base_unit = self.base_unit
+        # self.score = (base_unit.max_hp + 2 * base_unit.base_attack + 3 * base_unit.base_range + 10 * int(base_unit.is_multiple)) / base_unit.ap
+        return base_unit.ap
+
 def range_8(cell, map):
     r = cell.row
     c = cell.col
@@ -40,7 +50,10 @@ def best_cell_for_range_8_spell(world, units, heal):
         for cell in range_8(cell=unit.cell, map=map):
             x = (heal and unit.hp + 2 > unit.base_unit.max_hp)
             if unit.hp > 1 and (not x):
-                graph[cell.row][cell.col] += 1
+                k = 1
+                if unit.target_if_king != None:
+                    k += 100
+                graph[cell.row][cell.col] += k
 
     best_cell = Cell(1, 1)
     best_score = 0

@@ -5,7 +5,7 @@ import traceback
 from queue import Queue
 from threading import Thread
 
-from AI3 import AI
+from AI2 import AI
 from model import Message
 from model import ServerConstants
 from network import Network
